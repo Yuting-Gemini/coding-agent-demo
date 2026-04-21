@@ -27,14 +27,13 @@ export async function triggerBuild(
 ): Promise<{ buildNumber: number }> {
   const url = `${JENKINS_BASE}/job/${encodeURIComponent(JOB_NAME)}/buildWithParameters`
 
-  const params = new URLSearchParams({
-    MASTER_REVISION: masterRevision,
-    ASSET_BRANCH: assetBranch,
-  })
-
-  const res = await fetch(`${url}?${params.toString()}`, {
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      MASTER_REVISION: masterRevision,
+      ASSET_BRANCH: assetBranch,
+    }),
   })
 
   if (!res.ok) {
