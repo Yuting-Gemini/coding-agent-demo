@@ -1,40 +1,33 @@
 import type { BuildState } from './types.ts'
 
-/**
- * Jenkins API ベース URL
- * Vite の環境変数 VITE_JENKINS_URL で上書き可能。
- * 開発時はプロキシ経由を想定。
- */
 const JENKINS_BASE = import.meta.env.VITE_JENKINS_URL || '/jenkins'
-
-/** Jenkins ジョブ名 */
 const JOB_NAME = 'build-test-env'
 
 interface TriggerResponse {
+  queued: boolean;
   build_number: number;
 }
 
 interface BuildStatusResponse {
-  status: string;
+  number: number;
   result: string | null;
-  environment_url?: string;
+  building: boolean;
+  duration: number;
+  url: string;
 }
 
-/** ビルドをトリガーする */
 export async function triggerBuild(
   masterRevision: string,
   assetBranch: string,
 ): Promise<{ buildNumber: number }> {
-  const url = `${JENKINS_BASE}/job/${encodeURIComponent(JOB_NAME)}/buildWithParameters`
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      MASTER_REVISION: masterRevision,
-      ASSET_BRANCH: assetBranch,
-    }),
+  const params = new URLSearchParams({
+    MASTER_REVISION: masterRevision,
+    ASSET_BRANCH: assetBranch,
   })
+
+  const url = `${JENKINS_BASE}/job/${encodeURIComponent(JOB_NAME)}/buildWithParameters?${params.toString()}`
+
+  const res = await fetch(url, { method: 'POST' })
 
   if (!res.ok) {
     throw new Error(`ビルドの起動に失敗しました (${res.status})`)
@@ -44,7 +37,6 @@ export async function triggerBuild(
   return { buildNumber: data.build_number }
 }
 
-/** ビルドステータスを取得する */
 export async function fetchBuildStatus(
   buildNumber: number,
 ): Promise<BuildState> {
@@ -63,14 +55,16 @@ export async function fetchBuildStatus(
     status = 'SUCCESS'
   } else if (data.result === 'FAILURE' || data.result === 'ABORTED') {
     status = 'FAILURE'
-  } else if (data.status === 'RUNNING' || data.status === 'IN_PROGRESS') {
+  } else if (data.building) {
     status = 'RUNNING'
   }
 
   return {
     status,
     buildNumber,
-    environmentUrl: data.environment_url || null,
+    environmentUrl: status === 'SUCCESS'
+      ? `https://qa-env-${buildNumber}.dq13.internal`
+      : null,
     error: status === 'FAILURE' ? 'ビルドが失敗しました' : null,
   }
 }
