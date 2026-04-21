@@ -1,0 +1,42 @@
+/** DQ風シンプル明朗テーマトークン */
+export const theme = {
+  colors: {
+    bg: '#f0ead6',
+    bgCard: '#ffffff',
+    bgInput: '#faf8f0',
+    border: '#c4b99a',
+    borderFocus: '#6b5b3e',
+    text: '#3d3324',
+    textMuted: '#7a6e5a',
+    primary: '#2e5cb8',
+    primaryHover: '#1e3f8a',
+    primaryDisabled: '#a0b4d6',
+    success: '#2a8c3e',
+    successBg: '#e8f5e9',
+    error: '#c62828',
+    errorBg: '#ffebee',
+    warning: '#f57c00',
+    warningBg: '#fff3e0',
+    progressBg: '#e0dcc8',
+    progressFill: '#2e5cb8',
+    progressSuccess: '#2a8c3e',
+    progressFailure: '#c62828',
+  },
+  fonts: {
+    base: "'Hiragino Kaku Gothic ProN', 'Segoe UI', sans-serif",
+    heading: "'Hiragino Kaku Gothic ProN', 'Segoe UI', sans-serif",
+    mono: "'Consolas', 'Courier New', monospace",
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+  },
+  radius: {
+    sm: '4px',
+    md: '8px',
+    lg: '12px',
+  },
+} as const
