@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# DQ13 Portal — QA セルフサービスポータル雛形
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+`scenario: jenkins-qa-portal` 用の React + TypeScript + Vite 雛形。
 
-Currently, two official plugins are available:
+QA / デバッガーが Jenkins ジョブをブラウザから操作してテスト環境を即座に立てる、
+DQ シリーズの世界観に合った **シンプル明朗 UI** のポータルを生成するための土台。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 想定ユースケース
 
-## React Compiler
+- QA リードが「マスターデータのリビジョン × アセットブランチ」をプルダウンで選ぶ
+- 「環境構築」ボタンで Jenkins の `buildWithParameters` を起動
+- 進捗をプログレスバーで可視化
+- 完了したら接続先 URL を表示
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 既存の雛形構成
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+dq13-portal/
+├── index.html
+├── package.json
+├── tsconfig.json / tsconfig.app.json / tsconfig.node.json
+├── vite.config.ts
+├── eslint.config.js
+└── src/
+    ├── main.tsx           # エントリーポイント
+    ├── App.tsx            # ポータルのトップレベル枠
+    ├── App.css            # 全体スタイル
+    ├── index.css          # CSS リセット + テーマ変数の適用
+    ├── theme.ts           # DQ 風シンプル明朗テーマトークン
+    ├── api.ts             # Cloud Run モック叩く fetch ラッパー
+    └── components/
+        ├── Select.tsx     # 共通プルダウン
+        └── ProgressBar.tsx # 共通プログレスバー
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## モックサーバー
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+ローカル開発時もデモ時も、両方とも Cloud Run 上の同じモックを叩く:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+ベース URL: https://coding-agent-demo-mock-258509337164.us-central1.run.app
+Jenkins API:
+  GET  /api/json                            # ジョブ一覧
+  GET  /job/{name}/api/json                 # ジョブ詳細 (パラメータ定義)
+  POST /job/{name}/buildWithParameters      # ビルド起動
+  GET  /job/{name}/{buildNumber}/api/json   # ビルド状態
+```
+
+`src/api.ts` に既にこのベース URL がハードコードされている。
+本番接続に切り替える場合は `import.meta.env.VITE_JENKINS_BASE_URL` で上書き可能。
+
+## デザイン原則 (DQ 風)
+
+- **明朗な配色**: 白基調 + 青系アクセント
+- **太めのボーダー / 角丸**: ファミコン感を残しつつ現代風に
+- **読みやすいフォント**: システムフォント中心、コードは monospace
+- **エラー / 警告は赤系で目立たせる**
+
+色トークンは `src/theme.ts` を参照。コンポーネントから `theme.color.primary` 等で参照する。
+
+## 開発
+
+```bash
+npm install
+npm run dev   # http://localhost:5173
+```
+
+## Coding Agent への指示
+
+新規ポータル機能を追加するときは、以下の原則に従うこと:
+
+1. **`theme.ts` の色トークンを必ず使う** (ハードコード禁止)
+2. **`api.ts` の fetch ラッパーを使う** (生 `fetch` を直接呼ばない)
+3. **`components/` の共通部品を優先利用** (Select / ProgressBar 等)
+4. **ドメインルールは TypeScript 型 + UI 両方で防ぐ** (組合せ不正で送信ボタン disabled)
+5. **長時間ジョブは必ずポーリング + プログレスバー表示**
