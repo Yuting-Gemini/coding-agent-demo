@@ -43,6 +43,7 @@ export interface Pod {
     podIP?: string
     hostIP?: string
     startTime?: string
+    containerPorts?: Array<{ port: number; protocol: string }>
   }
 }
 
@@ -72,9 +73,9 @@ export const k8sApi = {
       body: JSON.stringify(spec),
     }),
   getPod: (name: string) =>
-    request<Pod>(`/api/v1/namespaces/${namespace}/pods/${name}`),
+    request<Pod>(`/api/v1/namespaces/${namespace}/pods/${encodeURIComponent(name)}`),
   deletePod: (name: string) =>
-    request<{ status: string }>(`/api/v1/namespaces/${namespace}/pods/${name}`, {
+    request<{ status: string }>(`/api/v1/namespaces/${namespace}/pods/${encodeURIComponent(name)}`, {
       method: 'DELETE',
     }),
 }
